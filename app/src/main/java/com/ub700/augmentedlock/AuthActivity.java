@@ -1,0 +1,250 @@
+package com.ub700.augmentedlock;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Build.VERSION_CODES;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.animation.LinearInterpolator;
+import android.widget.ImageView;
+import android.widget.Toast;
+import com.google.ar.core.Anchor;
+import com.google.ar.core.HitResult;
+import com.google.ar.core.Plane;
+import com.google.ar.sceneform.AnchorNode;
+import com.google.ar.sceneform.HitTestResult;
+import com.google.ar.sceneform.Node;
+import com.google.ar.sceneform.Scene;
+import com.google.ar.sceneform.math.Vector3;
+import com.google.ar.sceneform.rendering.Color;
+import com.google.ar.sceneform.rendering.Material;
+import com.google.ar.sceneform.rendering.MaterialFactory;
+import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.ShapeFactory;
+import com.google.ar.sceneform.ux.ArFragment;
+import com.google.ar.sceneform.ux.FootprintSelectionVisualizer;
+
+
+public class AuthActivity extends AppCompatActivity {
+
+    private static final String TAG = AuthActivity.class.getSimpleName();
+    private static final double MIN_OPENGL_VERSION = 3.0;
+
+    private ArFragment arFragment;
+    private Scene scene;
+    private static int deviceHeight;
+    private static int deviceWidth;
+    private boolean isFirstSelection;
+    private int hitCount;
+    private Node selectedNode;
+    private Node previousSelection;
+    private ImageView buttonSelectorView;
+    private Material buttonMaterial;
+    private boolean canRenderButtons;
+    private ValueAnimator buttonAnimator;
+    private static int buttonColor;
+    private ModelRenderable[] buttons;
+    private String key;
+    private StringBuilder enteredKey;
+
+
+    public AuthActivity() {
+        hitCount = 0;
+        canRenderButtons = false;
+        isFirstSelection = false;
+        buttons = new ModelRenderable[9];
+        enteredKey = new StringBuilder();
+        buttonColor = android.graphics.Color.argb(255,89, 139, 214);
+    }
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (!checkIsSupportedDeviceOrFinish(this)) {
+            return;
+        }
+
+        setContentView(R.layout.activity_auth);
+        arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
+
+        /* Building material to be applied to buttons. */
+        MaterialFactory.makeOpaqueWithColor(this, new Color(buttonColor))
+                .thenAccept(
+                        material -> {
+                            material.setFloat(MaterialFactory.MATERIAL_METALLIC, 1.0f);
+                            material.setFloat(MaterialFactory.MATERIAL_REFLECTANCE, 1f);
+                            buttonMaterial = material;
+                        });
+
+        Intent intent = getIntent();
+        key = intent.getExtras().getString("Key");
+
+        scene = arFragment.getArSceneView().getScene();
+        buttonSelectorView = findViewById(R.id.button_selector);
+
+        /* Get screen resolution of device. */
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        deviceHeight = displayMetrics.heightPixels;
+        deviceWidth = displayMetrics.widthPixels;
+
+        /* Plane listener to allow user to place keypad on surface of their choice.*/
+        arFragment.setOnTapArPlaneListener(
+                (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
+
+                    if (buildButtons() == false) {
+                        return;
+                    }
+                    if (!canRenderButtons) {
+                        Anchor anchor = hitResult.createAnchor();
+                        AnchorNode anchorNode = new AnchorNode(anchor);
+                        anchorNode.setParent(arFragment.getArSceneView().getScene());
+
+                        Vector3 localPosition = new Vector3();
+                        Node buttonNode;
+
+                        int index = 0;
+                        for (int i = -1; i < 2; i++) {
+                            for (int j = -1; j < 2; j++) {
+                                localPosition.set(0.25f * j, 0.0f, 0.25f * i);
+                                buttonNode = new Node();
+                                buttonNode.setParent(anchorNode);
+                                buttonNode.setLocalPosition(localPosition);
+                                buttonNode.setRenderable(buttons[index]);
+                                buttonNode.setName(Integer.toString(index + 1));
+                                buttonNode.setOnTapListener(((HitTestResult hitTestResult, MotionEvent motionEve) -> {
+                                    if (hitTestResult != null || hitTestResult.getNode() != null)
+                                        hitTestResult.getNode().getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(android.graphics.Color.RED));
+                                }));
+                                index++;
+                            }
+                        }
+                        arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
+                        this.runOnUiThread(() -> {
+                            buttonSelectorView.setVisibility(View.VISIBLE);
+                        });
+                        canRenderButtons = true;
+                        arFragment.getPlaneDiscoveryController().hide();
+                        arFragment.getPlaneDiscoveryController().setInstructionView(null);
+                        arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
+                        arFragment.getTransformationSystem().setSelectionVisualizer(new FootprintSelectionVisualizer());
+                    }
+                });
+
+        scene.addOnUpdateListener(frameTime -> {
+
+            /* Activated only after buttons are rendered on screen. */
+            if (canRenderButtons) {
+                if (isFirstSelection) {
+                    hitCount++;
+                    if (hitCount > 20) {
+                        hitCount = 0;
+                        isFirstSelection = false;
+                    }
+                } else {
+                    HitTestResult hitTestResult = scene.hitTest(scene.getCamera().screenPointToRay(deviceWidth / 2, deviceHeight / 2));
+                    if (hitTestResult != null && hitTestResult.getNode() != null) {
+                        if (hitCount == 0) {
+                            selectedNode = hitTestResult.getNode();
+                            hitCount = 1;
+                        } else {
+                            if (selectedNode.equals(hitTestResult.getNode())) {
+                                hitCount++;
+                            } else {
+                                selectedNode = hitTestResult.getNode();
+                                hitCount = 0;
+                            }
+                        }
+                        if (hitCount > 15) {
+                            if (buttonAnimator != null)  {
+                                previousSelection.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(buttonColor));
+                            }
+
+                            previousSelection = selectedNode;
+                            buttonAnimator = new ValueAnimator();
+                            buttonAnimator.setIntValues(android.graphics.Color.GREEN, buttonColor);
+                            buttonAnimator.setEvaluator(new ArgbEvaluator());
+                            buttonAnimator.setInterpolator(new LinearInterpolator());
+                            buttonAnimator.addListener(new AnimatorListenerAdapter() {
+                                public void onAnimationEnd(Animator animation) {
+                                    selectedNode.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(buttonColor));
+                                }});
+                            buttonAnimator.addUpdateListener((ValueAnimator valueButtonAnimatorator) -> {
+                                    selectedNode.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR,
+                                            new Color((int) valueButtonAnimatorator.getAnimatedValue()));
+                            });
+
+                            buttonAnimator.setDuration(150);
+                            buttonAnimator.start();
+                            enteredKey.append(selectedNode.getName());
+                            Log.e(TAG, enteredKey.toString());
+
+                            if (enteredKey.toString().equals(key)) {
+                                Intent intent2 = new Intent(getApplicationContext(), WelcomeActivity.class);
+                                startActivity(intent2);
+                                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                                finish();
+                            }
+                            hitCount = 0;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private boolean buildButtons() {
+        if (buttonMaterial == null) {
+            return false;
+        }
+        for (int i = 0; i < 9; i++) {
+            buttons[i] = ShapeFactory.makeCylinder(0.07f, 0.05f, new Vector3(0.0f, 0.15f, 0.0f),  buttonMaterial.makeCopy());
+        }
+        return true;
+    }
+
+
+
+
+    /*
+     * Returns false and displays an error message if Sceneform can not run, true if Sceneform can run
+     * on this device.
+     * <p>Sceneform requires Android N on the device as well as OpenGL 3.0 capabilities.
+     * <p>Finishes the activity if Sceneform can not run
+     */
+    public static boolean checkIsSupportedDeviceOrFinish(final Activity activity) {
+        if (Build.VERSION.SDK_INT < VERSION_CODES.N) {
+            Log.e(TAG, "Sceneform requires Android N or later");
+            Toast.makeText(activity, "Sceneform requires Android N or later", Toast.LENGTH_LONG).show();
+            activity.finish();
+            return false;
+        }
+        String openGlVersionString =
+                ((ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE))
+                        .getDeviceConfigurationInfo()
+                        .getGlEsVersion();
+        if (Double.parseDouble(openGlVersionString) < MIN_OPENGL_VERSION) {
+            Log.e(TAG, "Sceneform requires OpenGL ES 3.0 later");
+            Toast.makeText(activity, "Sceneform requires OpenGL ES 3.0 or later", Toast.LENGTH_LONG)
+                    .show();
+            activity.finish();
+            return false;
+        }
+        return true;
+    }
+
+}
+
