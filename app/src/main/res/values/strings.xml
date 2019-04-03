@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Augmented Lock</string>
+    <string name="app_name">AR Lock</string>
     <string name="button_selector">Button selector</string>
     <string name="welcome">Welcome!</string>
     <string name="enter_key">Enter Key to Test.</string>
