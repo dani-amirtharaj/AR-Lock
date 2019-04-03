@@ -45,7 +45,7 @@ public class AuthActivity extends AppCompatActivity {
     private Scene scene;
     private static int deviceHeight;
     private static int deviceWidth;
-    private boolean isFirstSelection;
+    private boolean firstSelectionDelay;
     private int hitCount;
     private Node selectedNode;
     private Node previousSelection;
@@ -57,12 +57,14 @@ public class AuthActivity extends AppCompatActivity {
     private ModelRenderable[] buttons;
     private String key;
     private StringBuilder enteredKey;
+    private static final int NUM_BUTTONS = 9;
+    private static final int HIT_WAIT = 15;
 
 
     public AuthActivity() {
         hitCount = 0;
         canRenderButtons = false;
-        isFirstSelection = false;
+        firstSelectionDelay = false;
         buttons = new ModelRenderable[9];
         enteredKey = new StringBuilder();
         buttonColor = android.graphics.Color.argb(255,89, 139, 214);
@@ -72,42 +74,27 @@ public class AuthActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         if (!checkIsSupportedDeviceOrFinish(this)) {
             return;
         }
-
         setContentView(R.layout.activity_auth);
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
 
-        /* Building material to be applied to buttons. */
-        MaterialFactory.makeOpaqueWithColor(this, new Color(buttonColor))
-                .thenAccept(
-                        material -> {
-                            material.setFloat(MaterialFactory.MATERIAL_METALLIC, 1.0f);
-                            material.setFloat(MaterialFactory.MATERIAL_REFLECTANCE, 1f);
-                            buttonMaterial = material;
-                        });
+        buildButtonMaterial(buttonColor, 1, 1);
 
         Intent intent = getIntent();
         key = intent.getExtras().getString("Key");
-
         scene = arFragment.getArSceneView().getScene();
         buttonSelectorView = findViewById(R.id.button_selector);
-
-        /* Get screen resolution of device. */
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        deviceHeight = displayMetrics.heightPixels;
-        deviceWidth = displayMetrics.widthPixels;
+        setDisplayHeightWidth();
 
         /* Plane listener to allow user to place keypad on surface of their choice.*/
         arFragment.setOnTapArPlaneListener(
                 (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
-
-                    if (buildButtons() == false) {
+                    if (!buildButtons()) {
                         return;
                     }
+
                     if (!canRenderButtons) {
                         Anchor anchor = hitResult.createAnchor();
                         AnchorNode anchorNode = new AnchorNode(anchor);
@@ -115,7 +102,6 @@ public class AuthActivity extends AppCompatActivity {
 
                         Vector3 localPosition = new Vector3();
                         Node buttonNode;
-
                         int index = 0;
                         for (int i = -1; i < 2; i++) {
                             for (int j = -1; j < 2; j++) {
@@ -132,14 +118,15 @@ public class AuthActivity extends AppCompatActivity {
                                 index++;
                             }
                         }
-                        arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
                         this.runOnUiThread(() -> {
                             buttonSelectorView.setVisibility(View.VISIBLE);
                         });
+
+                        /* To ensure plane detection is stopped when buttons are rendered once. */
                         canRenderButtons = true;
+                        arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
                         arFragment.getPlaneDiscoveryController().hide();
                         arFragment.getPlaneDiscoveryController().setInstructionView(null);
-                        arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
                         arFragment.getTransformationSystem().setSelectionVisualizer(new FootprintSelectionVisualizer());
                     }
                 });
@@ -148,15 +135,19 @@ public class AuthActivity extends AppCompatActivity {
 
             /* Activated only after buttons are rendered on screen. */
             if (canRenderButtons) {
-                if (isFirstSelection) {
+                if (firstSelectionDelay) {
                     hitCount++;
-                    if (hitCount > 20) {
+                    if (hitCount > HIT_WAIT+5) {
                         hitCount = 0;
-                        isFirstSelection = false;
+                        firstSelectionDelay = false;
                     }
                 } else {
+
+                    /* HitTestResult holds any node in the scene hit by a ray. */
                     HitTestResult hitTestResult = scene.hitTest(scene.getCamera().screenPointToRay(deviceWidth / 2, deviceHeight / 2));
                     if (hitTestResult != null && hitTestResult.getNode() != null) {
+
+                        /* To ensure same node is hit multiple times to get selected, to avoid over sensitivity in selection. */
                         if (hitCount == 0) {
                             selectedNode = hitTestResult.getNode();
                             hitCount = 1;
@@ -168,12 +159,15 @@ public class AuthActivity extends AppCompatActivity {
                                 hitCount = 0;
                             }
                         }
-                        if (hitCount > 15) {
+
+
+                        if (hitCount > HIT_WAIT) {
                             if (buttonAnimator != null)  {
                                 previousSelection.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(buttonColor));
                             }
-
                             previousSelection = selectedNode;
+
+                            /* Animation to show button selection. */
                             buttonAnimator = new ValueAnimator();
                             buttonAnimator.setIntValues(android.graphics.Color.GREEN, buttonColor);
                             buttonAnimator.setEvaluator(new ArgbEvaluator());
@@ -186,13 +180,15 @@ public class AuthActivity extends AppCompatActivity {
                                     selectedNode.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR,
                                             new Color((int) valueButtonAnimatorator.getAnimatedValue()));
                             });
-
                             buttonAnimator.setDuration(150);
                             buttonAnimator.start();
+
+                            /* Get selection and compare to actual key. */
                             enteredKey.append(selectedNode.getName());
                             Log.e(TAG, enteredKey.toString());
-
                             if (enteredKey.toString().equals(key)) {
+
+                                /* Start next activity. */
                                 Intent intent2 = new Intent(getApplicationContext(), WelcomeActivity.class);
                                 startActivity(intent2);
                                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
@@ -206,12 +202,33 @@ public class AuthActivity extends AppCompatActivity {
         });
     }
 
+    /* Building material to be applied to buttons. */
+    private void buildButtonMaterial(int color, float metallic, float reflectance) {
+        MaterialFactory.makeOpaqueWithColor(this, new Color(color))
+                .thenAccept(
+                        material -> {
+                            material.setFloat(MaterialFactory.MATERIAL_METALLIC, metallic);
+                            material.setFloat(MaterialFactory.MATERIAL_REFLECTANCE, reflectance);
+                            buttonMaterial = material;
+                        });
+    }
+
+    /* Get screen resolution of device. */
+    private void setDisplayHeightWidth() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        deviceHeight = displayMetrics.heightPixels;
+        deviceWidth = displayMetrics.widthPixels;
+    }
+
+    /* Build all buttons for keypad. */
     private boolean buildButtons() {
         if (buttonMaterial == null) {
             return false;
         }
-        for (int i = 0; i < 9; i++) {
-            buttons[i] = ShapeFactory.makeCylinder(0.07f, 0.05f, new Vector3(0.0f, 0.15f, 0.0f),  buttonMaterial.makeCopy());
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+            buttons[i] = ShapeFactory.makeCylinder(0.07f, 0.05f,
+                    new Vector3(0.0f, 0.15f, 0.0f),  buttonMaterial.makeCopy());
         }
         return true;
     }
