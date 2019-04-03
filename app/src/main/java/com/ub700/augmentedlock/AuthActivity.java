@@ -137,13 +137,13 @@ public class AuthActivity extends AppCompatActivity {
                                 hitCount = 0;
                             }
                         }
-
                         if (hitCount > HIT_WAIT) {
                             if (buttonAnimator != null)  {
                                 previousSelection.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(buttonColor));
                             }
                             previousSelection = selectedNode;
                             buttonAnimation(selectedNode);
+
                             /* Get selection and compare to actual key. */
                             enteredKey.append(selectedNode.getName());
                             Log.e(TAG, enteredKey.toString());
