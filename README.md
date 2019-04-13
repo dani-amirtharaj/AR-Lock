@@ -2,11 +2,11 @@
 
 Developed an Augmented Reality Authentication Mechanism that allows users to authenticate themselves by interacting with a virtual keypad generated on a real-world surface of the user's choice.
 
-This is a simple testing interface that allowed me to test different input key patterns.
+Below is a simple testing interface that allowed me to test different input key patterns.
 
 ![alt text](https://github.com/dani-amirtharaj/AugmentedLock/blob/master/gif/2yi5ze.gif "Part 1")
 
-This is a demo of the actual Authentication Mechanism. 
+Below is a demo of the actual Authentication Mechanism. 
 First the user places a virtual keypad on a surface of their choice.
 
 ![alt text](https://github.com/dani-amirtharaj/AugmentedLock/blob/master/gif/2yi7m4.gif "Part 2")
