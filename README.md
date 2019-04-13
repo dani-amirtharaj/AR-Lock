@@ -1,6 +1,6 @@
 # AugmentedLock
 
-Developed an Augmented Reality Authentication Mechanism that allows users to authenticate themselves by interacting with a virtual keypad generated on a real-world surface of the user's choice.
+Developed an Augmented Reality Authentication Mechanism using Google's ARCore, that allows users to authenticate themselves by interacting with a virtual keypad generated on a real-world surface of the user's choice.
 
 Below is a simple testing interface that allowed me to test different input key patterns.
 
