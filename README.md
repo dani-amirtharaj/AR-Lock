@@ -6,7 +6,7 @@ Below is a simple testing interface that allowed me to test different input key 
 
 ![alt text](https://github.com/dani-amirtharaj/AugmentedLock/blob/master/gif/2yi5ze.gif "Part 1")
 
-Below is a demo of the actual Authentication Mechanism. 
+Below is a demo of the actual Authentication Mechanism. <br/>
 First the user places a virtual keypad on a surface of their choice.
 
 ![alt text](https://github.com/dani-amirtharaj/AugmentedLock/blob/master/gif/2yi7m4.gif "Part 2")
