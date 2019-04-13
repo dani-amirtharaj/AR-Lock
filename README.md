@@ -9,7 +9,7 @@ This is a simple testing interface that allowed me to test different input key p
 This is a demo of the actual Authentication Mechanism. 
 First the user places a virtual keypad on a surface of their choice.
 
-![alt text](https://github.com/dani-amirtharaj/AugmentedLock/blob/master/gif/2yi7ie.gif "Part 2")
+![alt text](https://github.com/dani-amirtharaj/AugmentedLock/blob/master/gif/2yi7m4.gif "Part 2")
 
 The user then points the selector shape at the button to be selected. Here position of the button is used to calculate the selection. The buttons are positioned in a [1 2 3], [4 5 6], [7 8 9] order. 
 
