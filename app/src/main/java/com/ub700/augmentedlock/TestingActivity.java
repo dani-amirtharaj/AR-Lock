@@ -31,13 +31,13 @@ public class TestingActivity extends AppCompatActivity {
             keyText.setError("Please enter a key!");
             return;
         }
-        intent.putExtra("Key", keyText.getText().toString());
+        intent.putExtra("key", keyText.getText().toString());
 
         if (lengthText.getText() != null && lengthText.getText().toString().length() > 0) {
-            intent.putExtra("Length", Integer.parseInt(lengthText.getText().toString()));
+            intent.putExtra("length", Integer.parseInt(lengthText.getText().toString()));
         }
         if (retriesText.getText() != null && retriesText.getText().toString().length() > 0) {
-            intent.putExtra("Retries", Integer.parseInt(retriesText.getText().toString()));
+            intent.putExtra("retries", Integer.parseInt(retriesText.getText().toString()));
         }
         intent.putExtra("midAir", midAir);
 

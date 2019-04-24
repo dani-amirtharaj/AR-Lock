@@ -35,7 +35,6 @@ import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.math.Quaternion;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.Color;
-import com.google.ar.sceneform.rendering.MaterialFactory;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.FootprintSelectionVisualizer;
@@ -98,15 +97,19 @@ public class AuthActivity extends AppCompatActivity {
         setContentView(R.layout.activity_auth);
 
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
+        scene = arFragment.getArSceneView().getScene();
+
+        /* Getting arguments passed from previous activity. */
         Intent intent = getIntent();
-        key = intent.getExtras().getString("Key");
-        NUM_RETRIES = intent.getExtras().getInt("Retries", NUM_RETRIES);
-        CHAR_LIMIT = intent.getExtras().getInt("Length", CHAR_LIMIT);
+        key = intent.getExtras().getString("key");
+        NUM_RETRIES = intent.getExtras().getInt("retries", NUM_RETRIES);
+        CHAR_LIMIT = intent.getExtras().getInt("length", CHAR_LIMIT);
         midAirMode = intent.getExtras().getBoolean("midAir", false);
 
-        scene = arFragment.getArSceneView().getScene();
         buttonSelectorView = findViewById(R.id.button_selector);
         setDisplayHeightWidth();
+
+        /* Building buttons to be rendered. */
         if (!buildButtons()) {
             Log.e(TAG, "Error loading Buttons!");
         }
@@ -134,6 +137,7 @@ public class AuthActivity extends AppCompatActivity {
                         }
                     });
         } else {
+            /* Anchoring keypad in front of the phone (Mid air).*/
             disablePlaneDetection(arFragment);
             arFragment.getArSceneView().getScene().addOnUpdateListener(frameTime -> {
                 if (buttons.size() != NUM_BUTTONS) {
@@ -161,6 +165,7 @@ public class AuthActivity extends AppCompatActivity {
                 }
             });
         }
+
         scene.addOnUpdateListener(frameTime -> {
             /* Activated only after buttons are rendered on screen. */
             if (isKeypadRendered) {
@@ -192,7 +197,7 @@ public class AuthActivity extends AppCompatActivity {
                         }
                         if (hitCount > HIT_WAIT) {
                             if (buttonAnimator != null && previousSelection!= null)  {
-                                previousSelection.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(buttonColor));
+                                previousSelection.getRenderable().getMaterial(1).setFloat3("baseColor", new Color(buttonColor));
                             }
                             previousSelection = selectedNode;
                             buttonAnimation(selectedNode, android.graphics.Color.GREEN);
@@ -228,26 +233,26 @@ public class AuthActivity extends AppCompatActivity {
             }
         }
         CompletableFuture.allOf((CompletableFuture<ModelRenderable>[])
-                buttonCompletable.toArray(new CompletableFuture[buttonCompletable.size()]))
-                .handle((notUsed, throwable) -> {
-                            if (throwable != null) {
-                                return null;
-                            }
-                            for (int i = 0; i < NUM_BUTTONS; i++) {
+            buttonCompletable.toArray(new CompletableFuture[buttonCompletable.size()]))
+            .handle((notUsed, throwable) -> {
+                if (throwable != null) {
+                    return null;
+                }
+                for (int i = 0; i < NUM_BUTTONS; i++) {
 
-                                try {
-                                    Log.e(TAG, "Here" + i);
-                                    ModelRenderable tempButton = buttonCompletable.get(i).get();
-                                    buttons.add(i, tempButton);
-                                } catch (InterruptedException | ExecutionException ex) {
-                                    Log.e(TAG, ex.toString());
-                                }
-                            }
-                            return null;
-                        });
+                    try {
+                        ModelRenderable tempButton = buttonCompletable.get(i).get();
+                        buttons.add(i, tempButton);
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Log.e(TAG, ex.toString());
+                    }
+                }
+                return null;
+            });
         return true;
     }
 
+    /* Build keypads using rendered buttons and attach to AR scene. */
     private void buildKeypad(AnchorNode anchorNode) {
         Vector3 localPosition = new Vector3();
         Node buttonNode;
@@ -264,8 +269,6 @@ public class AuthActivity extends AppCompatActivity {
                 buttonNode.setName(Integer.toString(index + 1));
                 buttonNode.setOnTapListener(((HitTestResult hitTestResult, MotionEvent motionEve) -> {
                     if (hitTestResult != null || hitTestResult.getNode() != null)
-//                        hitTestResult.getNode().getRenderable().getMaterial(1).setFloat3("baseColor",
-//                                new Color(android.graphics.Color.RED));
                         resetKey();
                 }));
                 index++;
@@ -273,6 +276,7 @@ public class AuthActivity extends AppCompatActivity {
         }
     }
 
+    /* Disables plane detection for Mid air mode. */
     private void disablePlaneDetection(ArFragment arFragment) {
         arFragment.getArSceneView().getPlaneRenderer().setEnabled(false);
         arFragment.getPlaneDiscoveryController().hide();
@@ -364,6 +368,5 @@ public class AuthActivity extends AppCompatActivity {
         }
         return true;
     }
-
 }
 
