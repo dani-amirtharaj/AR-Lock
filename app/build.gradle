@@ -1,10 +1,11 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.ar.sceneform.plugin'
 
 android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.ub700.augmentedlock"
-        minSdkVersion 24
+        minSdkVersion 26
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -33,7 +34,53 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
     // Provides ArFragment, and other Sceneform UX resources:
-    implementation "com.google.ar.sceneform.ux:sceneform-ux:1.7.0"
+    implementation "com.google.ar.sceneform.ux:sceneform-ux:1.8.0"
 }
 
 apply plugin: 'com.google.ar.sceneform.plugin'
+
+sceneform.asset('sampledata/models/button9.fbx',
+        'default',
+        'sampledata/models/button9.sfa',
+        'src/main/assets/button9')
+
+
+sceneform.asset('sampledata/models/button6.fbx',
+        'default',
+        'sampledata/models/button6.sfa',
+        'src/main/assets/button6')
+
+sceneform.asset('sampledata/models/button1.fbx',
+        'default',
+        'sampledata/models/button1.sfa',
+        'src/main/assets/button1')
+
+sceneform.asset('sampledata/models/button2.fbx',
+        'default',
+        'sampledata/models/button2.sfa',
+        'src/main/assets/button2')
+
+sceneform.asset('sampledata/models/button4.fbx',
+        'default',
+        'sampledata/models/button4.sfa',
+        'src/main/assets/button4')
+
+sceneform.asset('sampledata/models/button5.fbx',
+        'default',
+        'sampledata/models/button5.sfa',
+        'src/main/assets/button5')
+
+sceneform.asset('sampledata/models/button7.fbx',
+        'default',
+        'sampledata/models/button7.sfa',
+        'src/main/assets/button7')
+
+sceneform.asset('sampledata/models/button8.fbx',
+        'default',
+        'sampledata/models/button8.sfa',
+        'src/main/assets/button8')
+
+sceneform.asset('sampledata/models/button3.fbx',
+        'default',
+        'sampledata/models/button3.sfa',
+        'src/main/assets/button3')
