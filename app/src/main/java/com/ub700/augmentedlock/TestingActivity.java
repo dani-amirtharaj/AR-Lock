@@ -3,11 +3,9 @@ package com.ub700.augmentedlock;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.KeyEvent;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.Switch;
 
 public class TestingActivity extends AppCompatActivity {
 
@@ -16,24 +14,33 @@ public class TestingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_testing);
 
-        EditText editText = findViewById(R.id.editText);
-        editText.setOnEditorActionListener((TextView textView, int id, KeyEvent keyEvent) -> {
-                if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
-                    startNextActivity(editText);
-                    return true;
-                }
-                return false;
-        });
+        EditText keyText = findViewById(R.id.editText);
+        EditText lengthText = findViewById(R.id.editText1);
+        EditText retriesText = findViewById(R.id.editText2);
+        Switch midAir = findViewById(R.id.switch1);
 
         Button button = findViewById(R.id.button);
         button.setOnClickListener((view) -> {
-            startNextActivity(editText);
+            startNextActivity(keyText, lengthText, retriesText, midAir.isChecked());
         });
     }
 
-    private void startNextActivity(EditText editText) {
+    private void startNextActivity(EditText keyText, EditText lengthText, EditText retriesText, Boolean midAir) {
         Intent intent = new Intent(getApplicationContext(), AuthActivity.class);
-        intent.putExtra("Key", editText.getText().toString());
+        if (keyText.getText() == null || keyText.getText().toString().length() == 0) {
+            keyText.setError("Please enter a key!");
+            return;
+        }
+        intent.putExtra("Key", keyText.getText().toString());
+
+        if (lengthText.getText() != null && lengthText.getText().toString().length() > 0) {
+            intent.putExtra("Length", Integer.parseInt(lengthText.getText().toString()));
+        }
+        if (retriesText.getText() != null && retriesText.getText().toString().length() > 0) {
+            intent.putExtra("Retries", Integer.parseInt(retriesText.getText().toString()));
+        }
+        intent.putExtra("midAir", midAir);
+
         startActivity(intent);
         overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         finish();

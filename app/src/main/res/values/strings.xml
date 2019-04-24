@@ -2,7 +2,7 @@
     <string name="app_name">AR Lock</string>
     <string name="button_selector">Button selector</string>
     <string name="welcome">Welcome!</string>
-    <string name="manyRetires">Too many retires!</string>
-    <string name="enter_key">Enter Key to Test.</string>
+    <string name="manyRetires">Too many retries!</string>
+    <string name="enter_key">Enter Test Arguments</string>
     <string name="next">Continue</string>
 </resources>

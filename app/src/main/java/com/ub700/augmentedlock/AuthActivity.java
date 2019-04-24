@@ -23,8 +23,11 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.ar.core.Anchor;
+import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
+import com.google.ar.core.Pose;
+import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.HitTestResult;
 import com.google.ar.sceneform.Node;
@@ -48,10 +51,10 @@ public class AuthActivity extends AppCompatActivity {
     private static final String TAG = AuthActivity.class.getSimpleName();
 
     private static final double MIN_OPENGL_VERSION = 3.0;
-    private static final int CHAR_LIMIT = 8;
-    private static final int NUM_RETRIES = 5;
-    private static final int NUM_BUTTONS = 9;
-    private static final int HIT_WAIT = 15;
+    private static int CHAR_LIMIT = 8;
+    private static int NUM_RETRIES = 5;
+    private static int NUM_BUTTONS = 9;
+    private static int HIT_WAIT = 15;
 
     private ArFragment arFragment;
     private Scene scene;
@@ -66,6 +69,7 @@ public class AuthActivity extends AppCompatActivity {
     private static int buttonColor;
     private ValueAnimator buttonAnimator;
     private boolean isKeypadRendered;
+    private boolean midAirMode;
     private String key;
     private StringBuilder enteredKey;
     private Toast wrongKeyToast;
@@ -80,6 +84,7 @@ public class AuthActivity extends AppCompatActivity {
         isKeypadRendered = false;
         firstSelectionDelay = true;
         enteredKey = new StringBuilder();
+        retries = -1;
         buttonColor = android.graphics.Color.argb(1,0.06f,0.06f, 0.85f);
     }
 
@@ -95,6 +100,9 @@ public class AuthActivity extends AppCompatActivity {
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
         Intent intent = getIntent();
         key = intent.getExtras().getString("Key");
+        NUM_RETRIES = intent.getExtras().getInt("Retries", NUM_RETRIES);
+        CHAR_LIMIT = intent.getExtras().getInt("Length", CHAR_LIMIT);
+        midAirMode = intent.getExtras().getBoolean("midAir", false);
 
         scene = arFragment.getArSceneView().getScene();
         buttonSelectorView = findViewById(R.id.button_selector);
@@ -103,28 +111,56 @@ public class AuthActivity extends AppCompatActivity {
             Log.e(TAG, "Error loading Buttons!");
         }
 
-        /* Plane listener to allow user to place keypad on surface of their choice.*/
-        arFragment.setOnTapArPlaneListener(
-                (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
-                    if (buttons.size() != NUM_BUTTONS) {
+        if (!midAirMode) {
+            /* Plane listener to allow user to place keypad on surface of their choice.*/
+            arFragment.setOnTapArPlaneListener(
+                    (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
+                        if (buttons.size() != NUM_BUTTONS) {
+                            return;
+                        }
+                        if (!isKeypadRendered) {
+                            Anchor anchor = hitResult.createAnchor();
+                            anchorNode = new AnchorNode(anchor);
+                            anchorNode.setParent(scene);
+
+                            buildKeypad(anchorNode);
+                            this.runOnUiThread(() -> {
+                                buttonSelectorView.setVisibility(View.VISIBLE);
+                            });
+
+                            /* To ensure plane detection is stopped when buttons are rendered once. */
+                            isKeypadRendered = true;
+                            disablePlaneDetection(arFragment);
+                        }
+                    });
+        } else {
+            disablePlaneDetection(arFragment);
+            arFragment.getArSceneView().getScene().addOnUpdateListener(frameTime -> {
+                if (buttons.size() != NUM_BUTTONS) {
+                    return;
+                }
+                if (!isKeypadRendered) {
+                    Frame arFrame = arFragment.getArSceneView().getArFrame();
+                    if (arFrame == null || arFrame.getCamera().getTrackingState() != TrackingState.TRACKING) {
                         return;
                     }
-                    if (!isKeypadRendered) {
-                        Anchor anchor = hitResult.createAnchor();
-                        anchorNode = new AnchorNode(anchor);
-                        anchorNode.setParent(scene);
+                    Pose cameraPose = arFrame.getCamera().getDisplayOrientedPose();
+                    Pose newPose = cameraPose.compose(Pose.makeTranslation(0f, 0f, -0.8f));
+                    newPose = newPose.compose(Pose.makeRotation((float) (1 / Math.sqrt(2)), 0f, 0f, (float) (1 / Math.sqrt(2))));
+                    Anchor anchor = arFragment.getArSceneView().getSession().createAnchor(newPose);
+                    anchorNode = new AnchorNode(anchor);
+                    anchorNode.setParent(scene);
 
-                        buildKeypad(anchorNode);
-                        this.runOnUiThread(() -> {
-                            buttonSelectorView.setVisibility(View.VISIBLE);
-                        });
+                    buildKeypad(anchorNode);
+                    this.runOnUiThread(() -> {
+                        buttonSelectorView.setVisibility(View.VISIBLE);
+                    });
 
-                        /* To ensure plane detection is stopped when buttons are rendered once. */
-                        isKeypadRendered = true;
-                        disablePlaneDetection(arFragment);
-                    }
-                });
-
+                    /* To ensure plane detection is stopped when buttons are rendered once. */
+                    isKeypadRendered = true;
+                }
+            });
+        }
         scene.addOnUpdateListener(frameTime -> {
             /* Activated only after buttons are rendered on screen. */
             if (isKeypadRendered) {
@@ -155,7 +191,7 @@ public class AuthActivity extends AppCompatActivity {
                             }
                         }
                         if (hitCount > HIT_WAIT) {
-                            if (buttonAnimator != null)  {
+                            if (buttonAnimator != null && previousSelection!= null)  {
                                 previousSelection.getRenderable().getMaterial().setFloat3(MaterialFactory.MATERIAL_COLOR, new Color(buttonColor));
                             }
                             previousSelection = selectedNode;
@@ -191,8 +227,8 @@ public class AuthActivity extends AppCompatActivity {
                 Log.e(TAG, e.toString());
             }
         }
-
-        CompletableFuture.allOf((CompletableFuture<ModelRenderable>[]) buttonCompletable.toArray(new CompletableFuture[buttonCompletable.size()]))
+        CompletableFuture.allOf((CompletableFuture<ModelRenderable>[])
+                buttonCompletable.toArray(new CompletableFuture[buttonCompletable.size()]))
                 .handle((notUsed, throwable) -> {
                             if (throwable != null) {
                                 return null;
@@ -202,7 +238,6 @@ public class AuthActivity extends AppCompatActivity {
                                 try {
                                     Log.e(TAG, "Here" + i);
                                     ModelRenderable tempButton = buttonCompletable.get(i).get();
-//                                    tempButton.getMaterial(0).setFloat4("baseColor", 1f, 1f, 1f, 0.8f);
                                     buttons.add(i, tempButton);
                                 } catch (InterruptedException | ExecutionException ex) {
                                     Log.e(TAG, ex.toString());
@@ -276,11 +311,12 @@ public class AuthActivity extends AppCompatActivity {
 
     private void resetKey() {
         retries++;
-        if (retries == NUM_RETRIES) {
-            startNextActivity(false);
-        }
         for (Node node : anchorNode.getChildren()) {
             buttonAnimation(node, android.graphics.Color.RED);
+        }
+        if (retries == NUM_RETRIES) {
+            startNextActivity(false);
+            return;
         }
         if (enteredKey.length() >= CHAR_LIMIT) {
             wrongKeyToast = Toast.makeText(this, "Wrong key entered!", Toast.LENGTH_SHORT);
