@@ -52,7 +52,7 @@ public class AuthActivity extends AppCompatActivity {
     private static final double MIN_OPENGL_VERSION = 3.0;
     private static int CHAR_LIMIT = 8;
     private static int NUM_RETRIES = 5;
-    private static int NUM_BUTTONS = 9;
+    private static int NUM_BUTTONS = 10;
     private static int HIT_WAIT = 15;
 
     private ArFragment arFragment;
@@ -119,6 +119,7 @@ public class AuthActivity extends AppCompatActivity {
             arFragment.setOnTapArPlaneListener(
                     (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
                         if (buttons.size() != NUM_BUTTONS) {
+                            Log.e(TAG, "Button size: "+buttons.size());
                             return;
                         }
                         if (!isKeypadRendered) {
@@ -126,7 +127,7 @@ public class AuthActivity extends AppCompatActivity {
                             anchorNode = new AnchorNode(anchor);
                             anchorNode.setParent(scene);
 
-                            buildKeypad(anchorNode);
+                            buildKeypad();
                             this.runOnUiThread(() -> {
                                 buttonSelectorView.setVisibility(View.VISIBLE);
                             });
@@ -155,7 +156,7 @@ public class AuthActivity extends AppCompatActivity {
                     anchorNode = new AnchorNode(anchor);
                     anchorNode.setParent(scene);
 
-                    buildKeypad(anchorNode);
+                    buildKeypad();
                     this.runOnUiThread(() -> {
                         buttonSelectorView.setVisibility(View.VISIBLE);
                     });
@@ -223,9 +224,9 @@ public class AuthActivity extends AppCompatActivity {
 
     /* Build all buttons for keypad. */
     private boolean buildButtons() {
-        for (int i = 1; i <= NUM_BUTTONS; i++) {
+        for (int i = 0; i < NUM_BUTTONS; i++) {
             try {
-                buttonCompletable.add(i-1, ModelRenderable.builder()
+                buttonCompletable.add(i, ModelRenderable.builder()
                         .setSource(this, Uri.parse("button" + i + ".sfb"))
                         .build());
             } catch (Exception e) {
@@ -253,7 +254,7 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     /* Build keypads using rendered buttons and attach to AR scene. */
-    private void buildKeypad(AnchorNode anchorNode) {
+    private void buildKeypad() {
         Vector3 localPosition = new Vector3();
         Node buttonNode;
         int index = 0;
@@ -261,19 +262,28 @@ public class AuthActivity extends AppCompatActivity {
             for (int j = -1; j < 2; j++) {
                 localPosition.set(0.3f * j, 0.0f, 0.3f * i);
                 buttonNode = new Node();
-                buttonNode.setParent(anchorNode);
-                buttonNode.setLocalPosition(localPosition);
-                buttonNode.setLocalRotation(Quaternion.lookRotation(new Vector3(0, 1, 0), new Vector3(0, 0, -1f)));
-                buttonNode.setWorldScale(new Vector3(3, 3, 3));
-                buttonNode.setRenderable(buttons.get(index));
-                buttonNode.setName(Integer.toString(index + 1));
-                buttonNode.setOnTapListener(((HitTestResult hitTestResult, MotionEvent motionEve) -> {
-                    if (hitTestResult != null || hitTestResult.getNode() != null)
-                        resetKey();
-                }));
+                configureButton(buttonNode, localPosition, index);
                 index++;
             }
+            if (index == NUM_BUTTONS-1) {
+                localPosition.set(0.0f, 0.0f,0.6f);
+                buttonNode = new Node();
+                configureButton(buttonNode, localPosition, -1);
+            }
         }
+    }
+    /* Configure button and its placement on keypad. */
+    private void configureButton(Node buttonNode, Vector3 localPosition, int index) {
+        buttonNode.setParent(anchorNode);
+        buttonNode.setLocalPosition(localPosition);
+        buttonNode.setLocalRotation(Quaternion.lookRotation(new Vector3(0, 1, 0), new Vector3(0, 0, -1f)));
+        buttonNode.setWorldScale(new Vector3(3, 3, 3));
+        buttonNode.setRenderable(buttons.get(index+1));
+        buttonNode.setName(Integer.toString(index + 1));
+        buttonNode.setOnTapListener(((HitTestResult hitTestResult, MotionEvent motionEve) -> {
+            if (hitTestResult != null || hitTestResult.getNode() != null)
+                resetKey();
+        }));
     }
 
     /* Disables plane detection for Mid air mode. */
@@ -319,6 +329,9 @@ public class AuthActivity extends AppCompatActivity {
             buttonAnimation(node, android.graphics.Color.RED);
         }
         if (retries == NUM_RETRIES) {
+            if (wrongKeyToast != null) {
+                wrongKeyToast.cancel();
+            }
             startNextActivity(false);
             return;
         }

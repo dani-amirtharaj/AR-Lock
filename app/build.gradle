@@ -34,7 +34,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
     // Provides ArFragment, and other Sceneform UX resources:
-    implementation "com.google.ar.sceneform.ux:sceneform-ux:1.8.0"
+    implementation "com.google.ar.sceneform.ux:sceneform-ux:1.9.0"
 }
 
 apply plugin: 'com.google.ar.sceneform.plugin'
@@ -84,3 +84,8 @@ sceneform.asset('sampledata/models/button3.fbx',
         'default',
         'sampledata/models/button3.sfa',
         'src/main/assets/button3')
+
+sceneform.asset('sampledata/models/button0.fbx',
+        'default',
+        'sampledata/models/button0.sfa',
+        'src/main/assets/button0')
