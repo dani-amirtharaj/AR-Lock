@@ -1,6 +1,7 @@
 # AugmentedLock
 
-Developed an Augmented Reality Authentication Mechanism using Google's ARCore, that allows users to authenticate themselves by interacting with a virtual keypad generated on a real-world surface of the user's choice.
+## Brief Description
+This is an Augmented Reality authentication mechanism that allows users to select characters/digits for authentication using AR. Here, the augmented keypad is fixed in the scene (as viewed from the camera), either on a planar surface such as a floor or table, or floating in front of the camera. The User will then move the device around in order to fill a digit within a selector (which is a fixed ring superimposed on the display), this selects a digit (much like earlier telephones) and highlights the button selected. The User can then continue to select more digits in order to match the password they had set for themselves earlier. The User can touch any of the buttons in order to reset the keypad entry. A specific number of retries and character limit can also be imposed to better secure this mechanism.
 
 Below is a simple testing interface that allowed me to test different input key patterns.
 
