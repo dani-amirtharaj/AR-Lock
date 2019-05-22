@@ -19,4 +19,4 @@ Main activity which holds the authentication mechanism. Creates renderable model
 
 * **WelcomeActivity**
 
-Simple activity that receives whether the authentication was successfull or not from AuthActivity, and displays a message accordingly.
+Simple activity that receives whether the authentication was successful or not from AuthActivity, and displays a message accordingly.
