@@ -1,0 +1,101 @@
+{
+  animations: [
+    {
+      path: 'sampledata/models/button0.fbx',
+    },
+  ],
+  materials: [
+    {
+      name: 'Material_90',
+      parameters: [
+        {
+          baseColor: [
+                     1,
+                     1,
+                     1,
+                     1,
+                   ],
+                 },
+         {
+           baseColorMap: null,
+         },
+        {
+          normalMap: null,
+        },
+        {
+          interpolatedColor: null,
+        },
+        {
+          metallic: 1,
+        },
+        {
+          metallicMap: null,
+        },
+        {
+          roughness: 0.2,
+        },
+        {
+          roughnessMap: null,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/fbx_material.sfm',
+    },
+    {
+      name: 'Material_88',
+      parameters: [
+        {
+         baseColor: [
+                     0.06,
+                     0.06,
+                     0.85,
+                     1,
+                   ],
+                 },
+                 {
+                   baseColorMap: null,
+                 },
+        {
+          normalMap: null,
+        },
+        {
+          interpolatedColor: null,
+        },
+        {
+          metallic: 1,
+        },
+        {
+          metallicMap: null,
+        },
+        {
+          roughness: 0.2,
+        },
+        {
+          roughnessMap: null,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/fbx_material.sfm',
+    },
+  ],
+  model: {
+    attributes: [
+      'Position',
+      'Color',
+      'TexCoord',
+      'Orientation',
+      'BoneIndices',
+      'BoneWeights',
+    ],
+    collision: {},
+    file: 'sampledata/models/button0.fbx',
+    name: 'button0',
+    recenter: 'root',
+    scale: 33,
+  },
+  version: '0.54:2',
+}
