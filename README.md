@@ -15,7 +15,19 @@ Activity used to test the mechanism and pass useful arguments that allow to test
 
 * **AuthActivity**
 
-Main activity which holds the authentication mechanism. Creates renderable models by loading the .sfb files (1 for each button rendered) packaged with the app, which contains 3D model information for each numeric button (0 to 9). If keypad is configured to be mid-air, creates an anchor at distance from the camera, facing the camera. If keypad is configured to be on a plane, an anchor is placed at any point that the User selects. An anchorNode is created and attahced to the anchor obtained in the previous step. A keypad is built on top of the anchorNode by attaching different nodes at appropriate positions (to resemble a phone keypad). To each node attached to the anchorNode, the appropriate renderable is set. When a User moves the phone to select a button (by filling the selector ring), a ray is cast onto the AR scene, and the node hit by the ray is returned and thus the number selected is identified. Numbers selected are appended to a string builder, and when this matches the key to be tested (sent from previous activity), the User is authenticated and the next activity (WelcomeActivity) is started with a success message. When the User touches any of the buttons or exceeds the character limit, the string builder is emptied and the user is allowed to retry. When the number of retires are exceeded, the User is not authenticated and the next activity (WelcomeActivity) is started with a failure message.
+Main activity which holds the authentication mechanism. 
+
+* Creates renderable models by loading the .sfb files (1 for each button rendered) packaged with the app, which contains 3D model information for each numeric button (0 to 9). 
+
+* If keypad is configured to be mid-air, creates an anchor at distance from the camera, facing the camera. If keypad is configured to be on a plane, an anchor is placed at any point that the User selects. 
+
+* An anchorNode is created and attahced to the anchor obtained in the previous step. A keypad is built on top of the anchorNode by attaching different nodes at appropriate positions (to resemble a phone keypad). To each node attached to the anchorNode, the appropriate renderable is set. 
+
+* When a User moves the phone to select a button (by filling the selector ring), a ray is cast onto the AR scene, and the node hit by the ray is returned and thus the number selected is identified. 
+
+* Numbers selected are appended to a string builder, and when this matches the key to be tested (sent from previous activity), the User is authenticated and the next activity (WelcomeActivity) is started with a success message. 
+
+* When the User touches any of the buttons or exceeds the character limit, the string builder is emptied and the user is allowed to retry. When the number of retires are exceeded, the User is not authenticated and the next activity (WelcomeActivity) is started with a failure message.
 
 * **WelcomeActivity**
 
