@@ -5,6 +5,10 @@ Augmented Reality Authentication Mechanism that allows users to authenticate the
 ## Brief Description
 This is an Augmented Reality authentication mechanism that allows users to select characters/digits for authentication using AR. Here, the augmented keypad is fixed in the scene (as viewed from the camera), either on a planar surface such as a floor or table, or floating in front of the camera. The User will then move the device around in order to fill a digit within a selector (which is a fixed ring superimposed on the display), this selects a digit (much like earlier telephones) and highlights the button selected. The User can then continue to select more digits in order to match the password they had set for themselves earlier. The User can touch any of the buttons in order to reset the keypad entry. A specific number of retries and character limit can also be imposed to better secure this mechanism.
 
+## Demo
+
+https://photos.app.goo.gl/eE1JCH8vNTFpj6fT8
+
 ## Code Overview
 
 There are 2 main activities that make up this app. The function of each activity is described below.
