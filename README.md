@@ -2,6 +2,7 @@
 
 Augmented Reality Authentication Mechanism that allows users to authenticate themselves by interacting with an AR keypad that is rendered in the scene.
 
+
 ## Brief Description
 * This is an Augmented Reality authentication mechanism that allows users to select characters/digits for authentication using AR.
 * Here, the augmented keypad is fixed in the scene (as viewed from the camera), either on a planar surface such as a floor or table, or floating in front of the camera. 
